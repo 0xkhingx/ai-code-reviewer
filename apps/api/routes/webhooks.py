@@ -5,13 +5,27 @@ from fastapi.concurrency import run_in_threadpool
 from psycopg.types.json import Jsonb
 
 from core.config import load_settings
-from core.queue import enqueue
+from core.queue import cancel_superseded, enqueue
 from core.security import verify_signature
 from db.session import connection
 
 router = APIRouter()
 
 REVIEW_ACTIONS = {"opened", "synchronize", "reopened"}
+
+
+def extract_review_target(payload: dict) -> dict | None:
+    """Validate PR payload shape; return job fields or None if not reviewable."""
+    try:
+        pr = payload["pull_request"]
+        return {
+            "installation_id": payload["installation"]["id"],
+            "repo_full_name": payload["repository"]["full_name"],
+            "pr_number": pr["number"],
+            "head_sha": pr["head"]["sha"],
+        }
+    except (KeyError, TypeError):
+        return None
 
 
 def _store_and_enqueue(delivery_id: str, event: str, payload: dict) -> str:
@@ -24,17 +38,12 @@ def _store_and_enqueue(delivery_id: str, event: str, payload: dict) -> str:
         if inserted is None:
             return "duplicate"
         if event == "pull_request" and payload.get("action") in REVIEW_ACTIONS:
-            pr = payload["pull_request"]
-            enqueue(
-                conn,
-                "review_pr",
-                {
-                    "installation_id": payload["installation"]["id"],
-                    "repo_full_name": payload["repository"]["full_name"],
-                    "pr_number": pr["number"],
-                    "head_sha": pr["head"]["sha"],
-                },
-            )
+            target = extract_review_target(payload)
+            if target is None:
+                return "stored-skipped-invalid"
+            job_id = enqueue(conn, "review_pr", target)
+            # Note: supersede cancels older queued reviews for the same PR.
+            cancel_superseded(conn, target["repo_full_name"], target["pr_number"], job_id)
             return "enqueued"
         return "stored"
 

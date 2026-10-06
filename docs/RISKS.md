@@ -12,6 +12,11 @@
 - **Unvalidated webhook payload.** `apps/api/routes/webhooks.py:27-36` indexes `payload["installation"]` directly — malformed event raises `KeyError` → 500. Owner: solo. Fix at M7: validate keys, return 400 on bad shape.
 - **GitHub rate limits.** Fresh JWT + installation token per job (`core/github/auth.py`), no caching, no 403-vs-401 split. OK for dozens/day, fails at scale. Owner: solo. Fix when rate-limited or jobs/min grows: cache token until `expires_at`, backoff on 403.
 
+## Update 2026-10-06 (offline, no-data session)
+
+- Implemented in code, live verification still pending: payload validation, jitter, reaper, supersede-cancel (`core/queue.py`, `webhooks.py`, `tests/test_queue_hardening.py`, 16 passed mocked).
+- Still open: duplicate-comment edit (needs comment-ID storage + schema change), prod image, migrations, secrets manager, rate-limit caching, live PR check, `git push` (deferred to save mobile data).
+
 ## Accepted for v1 (M3 summary)
 
 - **Truncated large PRs.** `core/github/diff.py`: cap 20 files / 6000 chars. Large PRs summarized partially with omission note. Accepted because v1 goal is plumbing, not insight. Revisit when summaries judged useless → M5 LLM or full file list.

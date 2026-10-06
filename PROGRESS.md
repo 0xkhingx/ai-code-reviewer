@@ -46,8 +46,8 @@ If nothing else, **M3 diff summary is the active work.**
 
 ## 4. Done
 
+- 2026-10-06: M7 hardening part 1 offline (no mobile data used): payload validation (`extract_review_target`), retry jitter, `reap_stale_running`, `cancel_superseded` + 6 mocked tests — `pytest` 16 passed, commit pending push
 - 2026-10-06: M3 diff fetch + summary (`core/github/diff.py`, `review_pr.py`, `tests/test_diff.py`) — `pytest` 10 passed
-- 2026-10-06: Prod-readiness review → `docs/RISKS.md` created, NOT prod ready (dev runtime, no migrations, no reaper)
 - 2026-10-05: M1-2 proven loop (webhook → queue → hardcoded comment) per README + code read (runtime re-verify pending)
 
 ---
