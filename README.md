@@ -1,4 +1,4 @@
-# AI Code Reviewer
+# firstpass
 
 GitHub App → FastAPI webhook → Postgres job queue → worker → PR comments.
 

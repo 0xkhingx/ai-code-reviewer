@@ -102,3 +102,4 @@ The smallest version that is genuinely useful (v1 = Milestone 3, deterministic, 
 ## Change history of this file
 
 - 2026-10-05: Created from template; filled for AI Reviewer M3 v1 (solo, free-only, diff-summary-first).
+- 2026-10-07: Renamed project to firstpass (full rebrand, all lowercase).

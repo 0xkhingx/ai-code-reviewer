@@ -69,7 +69,7 @@ If nothing else, **M3 diff summary is the active work.**
 
 ```bash
 # 1. Go to the project folder
-cd C:\Users\HP\Downloads\ai-code-reviewer\ai-code-reviewer
+cd C:\Users\HP\Downloads\firstpass\firstpass
 
 # 2. Start the project
 cp .env.example .env  # fill GITHUB_APP_ID + GITHUB_WEBHOOK_SECRET once
