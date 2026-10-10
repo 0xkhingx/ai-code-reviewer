@@ -38,14 +38,16 @@ If nothing else, **M7 part 2 design is the active work; live check is blocked on
 
 ## 3. Next up (in order)
 
-1. Manual check M3+M7: install Docker, create GitHub App (`.env` + `.pem`), `docker compose up --build` + tunnel + open test PR → single summary comment, updated (not duplicated) on retry
-2. M4: static analyzers (Ruff/Bandit) — needs Dockerfile + Node decisions
-3. M5: LLM review behind `core/llm` (needs provider + budget decision — currently free-only, so deferred)
+1. Live check (needs Docker + GitHub App `.env`/`.pem` + tunnel): open test PR → single comment, updated on retry; with `LLM_API_KEY` set, real LLM review
+2. Grow eval set toward 20-30 from real PRs; run `--backend llm` once keyed to pick model on evidence
+3. M4 time-boxed: only analyzers a model can't do reliably (secrets/rules); cut the rest
+4. Per-install key store + Postgres caps when multi-install reality arrives
 
 ---
 
 ## 4. Done
 
+- 2026-10-10: M5 core (BYOK review, eval harness with 11 seed cases, per-install/repo/global caps, redaction, injection-safe prompts, 2 verified providers) — `pytest` 29 passed, `evals/run.py` baseline 0 hits/0 FPs, pushed
 - 2026-10-07: M7 part 2: idempotent summary comments (marker upsert), token cache, reaper wired into worker loop, unknown-kind guard + 4 tests — `pytest` 20 passed, pushed
 - 2026-10-07: Renamed project to firstpass (code/docs/folders/GitHub repo `0xkhingx/firstpass`, remote updated, pushed)
 - 2026-10-06: M7 hardening part 1: payload validation (`extract_review_target`), retry jitter, `reap_stale_running`, `cancel_superseded` + 6 mocked tests — `pytest` 16 passed, pushed

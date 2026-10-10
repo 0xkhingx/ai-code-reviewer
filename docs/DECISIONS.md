@@ -59,3 +59,16 @@ Keep entries to two minutes each. Never delete; supersede with new ADRs.
 - **Consequences:** + No spam on retry, fewer token mints; - list call per job, in-memory cache lost on restart.
 - **Revisit when:** Multi-worker processes share nothing (cache per process) or comment-list pages grow large.
 - **Links:** `core/github/client.py`, `core/github/auth.py`, `apps/worker/main.py`, `tests/test_review_comments.py`
+
+## ADR-006: BYOK LLM review with eval-led model choice
+- **Date:** 2026-10-10
+- **Status:** Accepted
+- **Reversibility:** Two-way door (provider swap = config + eval re-run)
+- **Context:** Solo, ~6-week path to real users. Noise (not cost) is the bot-killer; line-count summaries give nobody a reason to install; a global-only budget lets one user break it for all; private code to third parties needs disclosure; diffs are untrusted input.
+- **Decision:** Bring-your-own-key: per-installation provider key (env today, per-install store later), default model `gpt-6-luna`, deterministic summary when no key. Eval harness (`evals/`, 11 seed cases) picks models on hit rate + false-positive rate. Caps per installation, per repo, and global. Redaction pre-send, injection-safe prompts (system/user split, no tools, capped JSON output).
+- **Mechanism:** `core/llm/review.py::resolve_config/review_diff`, `core/llm/caps.py`, `core/review/redact.py`, `core/llm/prompt.py`, `core/llm/providers/{openai,anthropic}.py`, `docs/PRIVACY.md`.
+- **Verified prices (provider pages, 2026-10-10):** OpenAI `gpt-6-luna` $0.10 in/$0.50 out per 1M short context (developers.openai.com/api/docs/pricing); Anthropic `claude-haiku-5-5` $0.10/$0.50 up to 100k-token prompts then $0.50/$2.50, newer tokenizers ~30% more tokens (platform.claude.com/docs/en/about-claude/pricing). Google Gemini page timed out — unverified, excluded. Honest input range 10-50k tokens/review, not 3k.
+- **Alternatives considered:** Operator-paid key — billing risk + card-on-file, rejected; global-only cap — one heavy user breaks all, rejected; full M4 analyzers first — duplicates CI value, time-boxed instead.
+- **Consequences:** + $0 operator cost at any scale, measurable quality bar, trust story shippable; - needs user key to shine, in-memory caps are single-worker.
+- **Revisit when:** Eval shows cheap-tier noise too high (try mid tier on evidence), multi-worker deploy (move caps to Postgres), or per-install key store needed.
+- **Links:** `core/llm/`, `core/review/redact.py`, `evals/`, `docs/PRIVACY.md`, `tests/test_llm_guards.py`

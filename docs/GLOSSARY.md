@@ -44,4 +44,9 @@
 - **Upsert**: update the existing record if found, create it if not — one comment per PR, not one per retry.
 - **Marker**: hidden HTML tag (`<!-- firstpass:pr-summary -->`) identifying our bot comment for later edits.
 - **Token cache**: reused installation token kept in memory until near expiry, avoiding a new mint per job.
+- **BYOK (bring your own key)**: repo owner plugs in their provider key; the bot bills them, operator pays $0.
+- **Eval set**: saved PR diffs with known issues used to score review quality with evidence.
+- **False-positive rate**: share of clean diffs the bot wrongly flags — the metric that gets bots muted.
+- **Redaction**: scrubbing secrets from text before sending it anywhere.
+- **Prompt injection**: malicious instructions hidden in reviewed content aimed at the model; diffs are untrusted input.
 - **Truncation**: cutting a large diff to a size cap and noting what was omitted.
