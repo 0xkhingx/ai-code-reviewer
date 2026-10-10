@@ -38,15 +38,15 @@ If nothing else, **M7 part 2 design is the active work; live check is blocked on
 
 ## 3. Next up (in order)
 
-1. Manual check M3: `docker compose up --build` + tunnel + open test PR → summary comment (runtime unverified)
-2. M7 hardening (queued per 2026-10-06 prod review, see `docs/RISKS.md`): payload validation, jitter, `running` reaper, supersede-cancel, edit-instead-of-duplicate comments
-3. M4: static analyzers (Ruff/Bandit) — needs Dockerfile + Node decisions
-4. M5: LLM review behind `core/llm` (needs provider + budget decision — currently free-only, so deferred)
+1. Manual check M3+M7: install Docker, create GitHub App (`.env` + `.pem`), `docker compose up --build` + tunnel + open test PR → single summary comment, updated (not duplicated) on retry
+2. M4: static analyzers (Ruff/Bandit) — needs Dockerfile + Node decisions
+3. M5: LLM review behind `core/llm` (needs provider + budget decision — currently free-only, so deferred)
 
 ---
 
 ## 4. Done
 
+- 2026-10-07: M7 part 2: idempotent summary comments (marker upsert), token cache, reaper wired into worker loop, unknown-kind guard + 4 tests — `pytest` 20 passed, pushed
 - 2026-10-07: Renamed project to firstpass (code/docs/folders/GitHub repo `0xkhingx/firstpass`, remote updated, pushed)
 - 2026-10-06: M7 hardening part 1: payload validation (`extract_review_target`), retry jitter, `reap_stale_running`, `cancel_superseded` + 6 mocked tests — `pytest` 16 passed, pushed
 - 2026-10-06: M3 diff fetch + summary (`core/github/diff.py`, `review_pr.py`, `tests/test_diff.py`) — `pytest` 10 passed at the time

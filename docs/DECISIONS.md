@@ -48,4 +48,14 @@ Keep entries to two minutes each. Never delete; supersede with new ADRs.
 - **Alternatives considered:** Raw diff accept header — one request but manual parse, better for M6 inline; do nothing — fails v1 goal.
 - **Consequences:** + No new deps, testable; - truncated on huge PRs, extra pages on large PRs.
 - **Revisit when:** Need hunk positions for inline comments (M6) or summaries judged useless → add raw diff + LLM.
-- **Links:** `core/github/diff.py`, `apps/worker/jobs/review_pr.py`
+## ADR-005: Idempotent comments + token cache + reaper wiring (M7 part 2)
+- **Date:** 2026-10-07
+- **Status:** Accepted
+- **Reversibility:** Two-way door
+- **Context:** Retries posted duplicate comments; every job minted a fresh token; `reap_stale_running` had no caller.
+- **Decision:** Tag summary with `<!-- firstpass:pr-summary -->`, PATCH existing marker comment else POST; cache installation tokens in-process until `expires_at` minus 60s; call reaper every 60s for jobs stuck `running` over 300s; fail unknown job kinds explicitly.
+- **Mechanism:** `core/github/client.py::upsert_summary_comment` (list → find marker → PATCH/POST); `core/github/auth.py::_TOKEN_CACHE`; `apps/worker/main.py` reaper block + unknown-kind guard.
+- **Alternatives considered:** DB comment-ID column — needs schema migration, rejected while init-SQL-only; no caching — wasteful at scale.
+- **Consequences:** + No spam on retry, fewer token mints; - list call per job, in-memory cache lost on restart.
+- **Revisit when:** Multi-worker processes share nothing (cache per process) or comment-list pages grow large.
+- **Links:** `core/github/client.py`, `core/github/auth.py`, `apps/worker/main.py`, `tests/test_review_comments.py`
