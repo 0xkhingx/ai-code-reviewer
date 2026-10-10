@@ -6,21 +6,22 @@
 
 ## 1. Current status
 
-**Last updated:** 2026-10-05
-**Overall state:** Working prototype
-**One-line summary:** Webhook → queue → hardcoded comment works (M1-2); M3 diff-summary in progress.
+**Last updated:** 2026-10-07
+**Overall state:** Working prototype (renamed to firstpass, pushed)
+**One-line summary:** Webhook → queue → diff summary works in code (M3 + M7 part 1); live Docker check still blocked (no Docker, no App creds locally).
 
-**What works right now (verified by code read, runtime unverified):**
-- Signed webhook verify (`core/security.py`), ping/delivery handling, idempotent event store (`apps/api/routes/webhooks.py`)
-- Postgres queue claim with `FOR UPDATE SKIP LOCKED` + exp backoff (`core/queue.py`)
+**What works right now (code + mocked tests, runtime unverified live):**
+- Signed webhook verify (`core/security.py`), ping/delivery handling, idempotent event store + payload validation (`apps/api/routes/webhooks.py::extract_review_target`)
+- Postgres queue claim with `FOR UPDATE SKIP LOCKED`, exp backoff + jitter, `reap_stale_running`, `cancel_superseded` (`core/queue.py`)
 - Worker loop + GitHub App JWT → installation token → issue comment (`apps/worker/`)
-- Signature tests (`tests/test_signature.py`)
-- M3 diff fetch + summary (`core/github/diff.py`, 5 new tests passing; 10 passed total with `pytest`)
+- Diff fetch via Files API + deterministic summary, capped 20 files/6000 chars (`core/github/diff.py`, `apps/worker/jobs/review_pr.py`)
+- 16 pytest green (`test_signature.py` + `test_diff.py` + `test_queue_hardening.py`)
 
 **What's broken or unfinished:**
-- `apps/worker/jobs/review_pr.py` still posts hardcoded text — no diff fetch yet (this session adds it)
-- `core/review/`, `core/llm/` are empty stubs (M5, not v1)
-- No `docs/` ledger yet (this session adds it)
+- `core/review/`, `core/llm/` are empty stubs (M5, deferred — free-only constraint)
+- Duplicate-comment edit not done (needs comment-ID storage + migration story)
+- No live verification: Docker not installed, no `.env` / `github-app.pem` locally
+- `docs/` ledger exists (`GLOSSARY`, `DECISIONS`, `RISKS`); `PROGRESS.md` resynced this session
 
 ---
 
@@ -28,10 +29,10 @@
 
 | What | Where (files/areas) | State it's in | What's left |
 |---|---|---|---|
-| M3 diff summary | `core/github/diff.py` (new), `apps/worker/jobs/review_pr.py`, `tests/test_diff.py` | Code to be written this session | Implement + `pytest` + Docker manual check |
-| Project memory | `PROJECT.md`, `PROGRESS.md`, `docs/GLOSSARY.md`, `docs/DECISIONS.md` | Filling now | Copy review + confirm hours/hosting |
+| M7 part 2 design | `review_pr.py` duplicate-comment edit, token caching | Deciding storage approach | Pick comment-ID column vs check-before-post |
+| Live check | Docker + GitHub App + tunnel | Blocked: Docker not installed, no `.env`/`.pem` | Install Docker, create App, run compose, open test PR |
 
-If nothing else, **M3 diff summary is the active work.**
+If nothing else, **M7 part 2 design is the active work; live check is blocked on setup.**
 
 ---
 
@@ -46,9 +47,10 @@ If nothing else, **M3 diff summary is the active work.**
 
 ## 4. Done
 
-- 2026-10-06: M7 hardening part 1 offline (no mobile data used): payload validation (`extract_review_target`), retry jitter, `reap_stale_running`, `cancel_superseded` + 6 mocked tests — `pytest` 16 passed, commit pending push
-- 2026-10-06: M3 diff fetch + summary (`core/github/diff.py`, `review_pr.py`, `tests/test_diff.py`) — `pytest` 10 passed
-- 2026-10-05: M1-2 proven loop (webhook → queue → hardcoded comment) per README + code read (runtime re-verify pending)
+- 2026-10-07: Renamed project to firstpass (code/docs/folders/GitHub repo `0xkhingx/firstpass`, remote updated, pushed)
+- 2026-10-06: M7 hardening part 1: payload validation (`extract_review_target`), retry jitter, `reap_stale_running`, `cancel_superseded` + 6 mocked tests — `pytest` 16 passed, pushed
+- 2026-10-06: M3 diff fetch + summary (`core/github/diff.py`, `review_pr.py`, `tests/test_diff.py`) — `pytest` 10 passed at the time
+- 2026-10-05: M1-2 proven loop (webhook → queue → comment) per README + code read
 
 ---
 
@@ -90,8 +92,10 @@ pytest
 ## 8. Things the next session should know
 
 - Schema mount `./db/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro` runs only on first volume init.
-- Worker makes a fresh JWT+token per job — fine for low volume, wasteful at scale.
-- No `running` reaper — crashed-after-claim without rollback can stick; restart + manual `status='queued'` reset is the current workaround.
+- Worker makes a fresh JWT+token per job — fine for low volume, wasteful at scale (token caching planned, M7 part 2).
+- `reap_stale_running()` exists in code but nothing calls it on a schedule yet — wire into worker loop or cron in M7 part 2.
+- `cancel_superseded()` is called on enqueue; `cancelled` is a new status value with no index — fine at low volume.
+- Docker is NOT installed on this machine; no `.env` / `github-app.pem` locally — live check blocked until both exist.
 - Don't commit `.env` / `*.pem`.
 
 ---

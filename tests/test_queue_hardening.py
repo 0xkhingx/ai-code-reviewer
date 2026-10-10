@@ -1,21 +1,3 @@
-import sys
-import types
-
-# Offline stub: db.session needs psycopg_pool which isn't installed locally.
-# Stub it so webhook payload validation can be tested without a DB driver.
-if "psycopg_pool" not in sys.modules:
-    try:
-        import psycopg_pool  # noqa: F401
-    except ImportError:
-        stub_pool = types.ModuleType("psycopg_pool")
-
-        class ConnectionPool:  # minimal stand-in for import time only
-            def __init__(self, *a, **k):
-                raise RuntimeError("DB not available in offline tests")
-
-        stub_pool.ConnectionPool = ConnectionPool
-        sys.modules["psycopg_pool"] = stub_pool
-
 from apps.api.routes.webhooks import extract_review_target
 from core import queue
 
